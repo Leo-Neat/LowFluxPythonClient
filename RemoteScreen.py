@@ -4,6 +4,7 @@ from PIL import Image
 from Tkinter import Tk
 from tkFileDialog import askopenfilename
 import math
+import json
 
 
 
@@ -45,12 +46,13 @@ class RemoteScreen:
         print("Sending Screen")
         self.__sock.send(NEWDATA)
         self.__sock.recv(10)
+
         self.__sock.send(str(self.width) + ':' + str(self.height) + '\n')
         self.__sock.recv(10)
-        for x in range(0, self.width):
-            for y in range(0, self.height):
-                self.__sock.send(str(int(self.screen[x, y]))+',')
-        self.__sock.send('\n')
+        jdic = {}
+        jdic['list'] = self.screen.tolist()
+        jlist = json.dumps(jdic)
+        self.__sock.send(jlist + '\n')
         print("Screen sent successfully")
 
     def disconnect(self):
