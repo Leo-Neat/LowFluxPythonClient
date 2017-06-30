@@ -19,6 +19,7 @@ from Tkinter import Tk
 from tkFileDialog import askopenfilename
 import math
 import json
+import base64
 import os
 
 # Global Constants
@@ -81,10 +82,26 @@ class RemoteScreen:
         self.__sock.recv(10)
         self.__sock.send(str(self.width) + ':' + str(self.height) + '\n')   # Sending the screens dimensions
         self.__sock.recv(10)
+
+        # New Base64 method, more resource efficient
+        rgbArray = np.zeros((self.height, self.width, 3), 'uint8')
+        rgbArray[..., 0] = 0
+        rgbArray[..., 1] = np.rot90(np.rot90(np.rot90(self.screen)))
+        rgbArray[..., 2] = 0
+        img = Image.fromarray(rgbArray)
+        img.save('img.jpeg')                             # Convert Screen to base64
+        with open("img.jpeg", "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read())
+
+        self.__sock.send(encoded_string + '\n')                                    # Send as String
+
+        # Older Json method, less resource efficient
+        """
         jdic = {}
         jdic['list'] = self.screen.tolist()                                 # Packs screen in to Json format
         jlist = json.dumps(jdic)
         self.__sock.send(jlist + '\n')                                      # Sends the screen
+        """
         print("Screen sent successfully")
 
 
