@@ -28,6 +28,7 @@ NEWDATA     = '1\n'                 # Constants used for communicating with andr
 SUCCESS     = '2\n'
 DISCONNECT  = '3\n'
 SETTIME     = '4\n'
+GETSCREENDIM= '5\n'
 HOST        = 'localhost'           # Socket descriptors
 ADDR        = (HOST, PORT)
 
@@ -44,18 +45,18 @@ class RemoteScreen:
     mode    = 'Not Set'             # The current State of accessing the screen
 
 
-    def __init__(self, w, h):
+    def __init__(self):
         # Initializes the Remote screen class for controlling an android device connected via USB port
         # Note that adb needs to be added as an environment variable for this to work
 
         os.system("adb forward tcp:" + str(PORT) + " tcp:" + str(PORT)) # Port forwards the CPU port to phone port
-        self.width  = w
-        self.height = h
-        self.screen = np.zeros((w, h))                                  # Creates the underlying array for the screen
-        self.__sock = self.__socket_config()                            # initialize the socket used for communicating
+        self.__sock = self.socket_config()
+        self.get_screen_dim()
+        self.screen = np.zeros((self.width, self.height, 3))                                  # Creates the underlying array for the screen
+                                # initialize the socket used for communicating
 
 
-    def __socket_config(self):
+    def socket_config(self):
         #   This function initializes the socket connection with the android device. It needs to be called after the
         # ADB forward command or it will raise an error. This function needs to be called before send_screen
         # is called, or their will be no connection to send the screen to.
@@ -67,9 +68,18 @@ class RemoteScreen:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.connect(ADDR)
         except Exception, e:
-            print str(e)
+            print "Error unable to establish connection: "+ str(e)
+            exit(1)
         print("Connection established")
         return s                                                        # Returns the Socket for communication
+
+    # Gets the dimensions of the phone screen on the android side
+    def get_screen_dim(self):
+        self.__sock.send(GETSCREENDIM)
+        self.__sock.recv(2)
+        wstring, hstring = self.__sock.recv(100).split(',')
+        self.width  = int(wstring)
+        self.height = int(hstring)
 
 
     def send_screen(self):
@@ -85,9 +95,9 @@ class RemoteScreen:
 
         # New Base64 method, more resource efficient
         rgbArray = np.zeros((self.height, self.width, 3), 'uint8')
-        rgbArray[..., 0] = 0
-        rgbArray[..., 1] = np.rot90(np.rot90(np.rot90(self.screen)))
-        rgbArray[..., 2] = 0
+        rgbArray[..., 0] = np.transpose(self.screen[:, :, 0])
+        rgbArray[..., 1] = np.transpose(self.screen[:, :, 1])
+        rgbArray[..., 2] = np.transpose(self.screen[:, :, 2])
         img = Image.fromarray(rgbArray)
         img.save('img.jpeg')                             # Convert Screen to base64
         with open("img.jpeg", "rb") as image_file:
@@ -95,13 +105,6 @@ class RemoteScreen:
 
         self.__sock.send(encoded_string + '\n')                                    # Send as String
 
-        # Older Json method, less resource efficient
-        """
-        jdic = {}
-        jdic['list'] = self.screen.tolist()                                 # Packs screen in to Json format
-        jlist = json.dumps(jdic)
-        self.__sock.send(jlist + '\n')                                      # Sends the screen
-        """
         print("Screen sent successfully")
 
 
@@ -126,31 +129,48 @@ class RemoteScreen:
         print("Successfully disconnected")
 
 
-    def change_pixel(self, px, py, val):
+    def set_pixel(self, px, py, pz, val):
         #   Changes an individual pixel value on the screen. The first argument is the x coordinate of the pixel,
         # the second argument is the y coordinate and the third is the intensity which is [0,255].
+        # pz = R = 0, G = 1, B = 2
+
+        self.check_param(1, self.width, px,"Pixel Width")
+        self.check_param(1, self.height, py, "Pixel Height")
+        self.check_param(0, 2, pz, "Pixel Depth")
+        self.check_param(0, 255, val, "Pixel Value")
 
         self.mode = 'Individual Pixel'
-        self.screen[px, py] = val
+        self.screen[px, py, pz] = val
 
 
-    def turn_black(self):
+    def set_off(self):
         #   Turns all of the pixels off effectively resetting the android screen
 
-        self.mode = 'Black'
-        self.screen = np.zeros((self.width, self.height))
+        self.mode = 'Off'
+        self.screen = np.zeros((self.width, self.height, 3))
 
 
-    def turn_color(self, val):
+    def set_flatfield(self, val, depth):
         # Turns all of the pixels the intensity defined by the first argument.
+        # Depth codes: R = 0, G = 1, B = 2
 
-        self.mode = 'Solid Color'
+        self.check_param(0, 255, val, "Flat Value")
+        self.check_param(0, 2, depth, "Flat Depth")
+        self.mode = 'Flat Field'
         for x in range(0, self.width):
             for y in range(0, self.height):
-                self.screen[x, y] = val
+                self.screen[x, y, depth] = val
 
 
-    def use_image(self):
+    def set_gray(self, val):
+
+        self.check_param(0, 255, val, "Grey Value")
+        # Turns the screen to a grey shade
+        self.mode = 'grey'
+        self.screen[:, :, :] = val
+
+
+    def set_image(self):
         #   This method allows the user to pick an image for which they want the phone to be converted to.
         # It uses the Tkinter library to open up a file browser in order to select a picture to enter. The pictures
         # Dimension must match the given width and height or an error will occur.
@@ -158,45 +178,63 @@ class RemoteScreen:
         self.mode = 'Image'                                         # Open file browser
         Tk().withdraw()
         filename = askopenfilename()
-        img = Image.open(filename).convert('LA')
+        img = Image.open(filename)
         width, height = img.size
         if width == self.width and height == self.height:           # Check image dimensions
             px = img.load()
+            self.check_param(self.width, self.width, width, "Image Width")
+            self.check_param(self.height, self.height, height, "Image Height")
             for i in range(img.size[0]):  # for every pixel:        # Convert the screen to the image
                 for j in range(img.size[1]):
-                    temp = px[i, j]
-                    self.screen[i, j] = temp[0]
+                    for k in range(2):
+                        temp = px[i, j]
+                        self.screen[i,j,0] = temp[0]
+                        self.screen[i, j, 1] = temp[1]
+                        self.screen[i, j, 2] = temp[2]
         else:
             print("Error, the image has incorrect size, it needs the dims: " + str(self.width) + ", " + str(self.height))
 
 
-    def even_distro(self, xspace, yspace, bval, dval):
+    def set_sparsefeild(self, depth, xspace, yspace, bval, dval):
         #  This function allows the user to put a grid of pixels on to the android screen. The grid is defined by four
         # Parameters. The x and y space are integers that depict the distance in pixels between where you want the
         # bright spots. The bval is the intensity level of the bright spots [0,255] and the dval is the intensity of
         # the dark spots [0,255].
 
+        self.check_param(0,2, depth, "Sparse Depth")
+        self.check_param(1, 2000, xspace, "Sparse X Space")
+        self.check_param(1, 2000, yspace, "Sparse Y Space")
+        self.check_param(0, 255, bval, "Sparse Bright Value")
+        self.check_param(0, 255, dval, "Sparse Dark Value")
+
         self.mode = "Even Distribution "
         for x in range(0,self.width):
             for y in range(0, self.height):
                 if(x % xspace == 0) and (y % yspace == 0):          # Set specified pixels to specified values
-                    self.screen[x, y] = bval
+                    self.screen[x, y, depth] = bval
                 else:
-                    self.screen[x, y] = dval
+                    self.screen[x, y, depth] = dval
 
 
-    def circle(self, radius, bval, dval, xpos, ypos):
+    def set_circle(self, depth, radius, bval, dval, xpos, ypos):
         #   This allows the user to draw a circle on the screen based upon the given parameters. Like above the
         # bval and dval represent the intensity of the bright and dark pixels [0,255]. The x and y pos are the
         # position of the center of the circle.
+
+        self.check_param(0, 2, depth, "Circle Depth")
+        self.check_param(1, 2000, radius, "Circle Radius")
+        self.check_param(0, 255, bval, "Circle Bright Value")
+        self.check_param(0, 2, dval, "Circle Dark Value")
+        self.check_param(1, 2000, radius, "Y Position")
+        self.check_param(1, 2000, radius, "X Position")
 
         self.mode = "Circle"
         for x in range(0, self.width):
             for y in range(0, self.height):
                 if math.sqrt(((x - xpos) ** 2) + ((y - ypos) ** 2)) < radius:
-                    self.screen[x, y] = bval
+                    self.screen[x, y, depth] = bval
                 else:
-                    self.screen[x, y] = dval
+                    self.screen[x, y, depth] = dval
 
 
     def print_state(self):
@@ -217,6 +255,14 @@ class RemoteScreen:
 
 
 
+    def check_param(self, min, max, param, fun):
+        # checks to see if the parameter is within viable values. This is to help prevent the android
+        # application from unexpected crashes
 
-
+        if(param >= min and param <= max):
+                return True
+        else:
+            print("Error, you have passed an out of bounds [" +str(min) + ", " + str(max)+ "]  "
+                "parameter in value " + fun + ". System will now exit.")
+            exit(1)
 

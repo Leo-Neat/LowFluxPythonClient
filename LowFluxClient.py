@@ -12,6 +12,7 @@
 """
 
 import RemoteScreen
+from PIL import Image
 
 
 def display_menu():
@@ -24,11 +25,12 @@ def display_menu():
     print("*Low Flux Android Menu*")
     print("_______________________")
     print("1) Clear Screen")
-    print("2) Set full Shade")
+    print("2) Set flat field")
     print("3) Set a Matrix")
     print("4) Set an Image")
     print("5) Disconnect")
     print("6) Set Time Delay")
+    print("7) View Current Display")
     result = int(raw_input("Enter your choice: "))
     return result
 
@@ -40,12 +42,14 @@ def head():
     screen.print_state()
     result = display_menu()
     if result == 1:
-        screen.turn_black()
+        screen.set_off()
         screen.send_screen()
         head()
     elif result == 2:
         val = int(raw_input("What intensity do you want the screen(0-255): "))
-        screen.turn_color(val)
+        depth = int(raw_input("What depth do you want to put the field(0=R, 1=G, 2=B): "))
+        screen.set_off()
+        screen.set_flatfield(val, depth)
         screen.send_screen()
         head()
     elif result == 3:
@@ -56,26 +60,29 @@ def head():
             dval = int(raw_input("Enter the outer pixel values[0-255]: "))
             cx = int(raw_input("Enter the center x pixel: "))
             cy = int(raw_input("Enter the center y pixel: "))
-            screen.circle(rad, bval, dval, cx, cy)
+            depth = int(raw_input("What depth do you want to put the field(0=R, 1=G, 2=B): "))
+            screen.set_circle(depth, rad, bval, dval, cx, cy)
             screen.send_screen()
         elif ret == 2:
             xspace = int(raw_input("Enter the distance between the pixels x values: "))
             yspace = int(raw_input("Enter the distance between the pixels y values: "))
             bval   = int(raw_input("Enter the selected pixels value[0-255]: "))
             dval   = int(raw_input("Enter the non selected pixels value[0-255]: "))
-            screen.even_distro(xspace, yspace, bval, dval)
+            depth = int(raw_input("What depth do you want to put the field(0=R, 1=G, 2=B): "))
+            screen.set_sparsefeild(depth, xspace, yspace, bval, dval)
             screen.send_screen()
         elif ret == 3:
             px = int(raw_input("Enter the x value of the pixel you want to change: "))
             py = int(raw_input("Enter the y value of the pixel you want to change: "))
+            pz = int(raw_input("Enter the z value of the pixel you want to change: "))
             inten = int(raw_input("Enter the intensity of the pixel you want to change: "))
-            screen.change_pixel(px, py, inten)
+            screen.set_pixel(px, py, pz, inten)
             screen.send_screen()
         else:
             print("invalid opt, returning to main screen")
         head()
     elif result == 4:
-        screen.use_image()
+        screen.set_image()
         screen.send_screen()
         head()
     elif result == 5:
@@ -84,6 +91,10 @@ def head():
         newtime = int(raw_input("Please Enter the Delay you want in ms(0 is always on): "))
         newsleep = int(raw_input("Please Enter the length of time you want the image to say on(ms): "))
         screen.set_time(newtime, newsleep)
+        head()
+    elif result == 7:
+        img = Image.open("img.jpeg")
+        img.show()
         head()
     else:
         print("invalid option please repick...")
@@ -101,5 +112,5 @@ def matmenu():
 
 # Global Screen what acts as the main data type
 # Note that the screen resolution is hardcoded
-screen = RemoteScreen.RemoteScreen(1080, 1920)
+screen = RemoteScreen.RemoteScreen()
 head()                                              # Prompt menus to open
