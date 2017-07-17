@@ -18,7 +18,6 @@ from PIL import Image
 from Tkinter import Tk
 from tkFileDialog import askopenfilename
 import math
-import json
 import base64
 import os
 
@@ -99,11 +98,11 @@ class RemoteScreen:
         rgbArray[..., 1] = np.transpose(self.screen[:, :, 1])
         rgbArray[..., 2] = np.transpose(self.screen[:, :, 2])
         img = Image.fromarray(rgbArray)
-        img.save('img.jpeg')                             # Convert Screen to base64
-        with open("img.jpeg", "rb") as image_file:
+        img.save('img.bmp')                             # Convert Screen to base64
+        img.show()
+        with open("img.bmp", "rb") as image_file:
             encoded_string = base64.b64encode(image_file.read())
-
-        self.__sock.send(encoded_string + '\n')                                    # Send as String
+        self.__sock.send(encoded_string + '\n')                 # Send as String
 
         print("Screen sent successfully")
 
@@ -141,6 +140,7 @@ class RemoteScreen:
 
         self.mode = 'Individual Pixel'
         self.screen[px, py, pz] = val
+
 
 
     def set_off(self):

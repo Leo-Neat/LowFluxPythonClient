@@ -93,7 +93,7 @@ def head():
         screen.set_time(newtime, newsleep)
         head()
     elif result == 7:
-        img = Image.open("img.jpeg")
+        img = Image.open("img.bmp")
         img.show()
         head()
     else:
