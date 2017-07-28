@@ -51,6 +51,9 @@ class RemoteScreen:
         # Note that adb needs to be added as an environment variable for this to work
 
         os.system("adb forward tcp:" + str(PORT) + " tcp:" + str(PORT)) # Port forwards the CPU port to phone port
+        sleep(1)
+        os.system("adb shell am start -n com.jpl.lneat.lowfluxserver/com.jpl.lneat.lowfluxserver.MainActivity")
+        sleep(2)
         self.__sock = self.__socket_config()
         self.__get_screen_dim()
         self.__screen = np.zeros((self.__width, self.__height, 3))                                  # Creates the underlying array for the screen
@@ -74,6 +77,7 @@ class RemoteScreen:
         print("Connection established")
         return s                                                        # Returns the Socket for communication
 
+
     # Gets the dimensions of the phone screen on the android side
     def __get_screen_dim(self):
         self.__sock.send(GETSCREENDIM)
@@ -83,8 +87,11 @@ class RemoteScreen:
         self.__height = int(hstring)
         sleep(1)
 
+
     def set_phone_brightness(self, bval):
+
         print("WARNING! SETTING PHONE TO LARGE BRIGHT VALUE CAN DAMAGE THE SCREEN!")
+        self.check_param(0, 255, bval, "Phone Brighness")
         self.__sock.send(SETBRIGHT)
         self.__sock.recv(10)
         self.__sock.send(str(bval) + '\n')

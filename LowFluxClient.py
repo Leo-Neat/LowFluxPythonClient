@@ -32,7 +32,7 @@ def display_menu():
     print("5) Disconnect")
     print("6) Set Time Delay")
     print("7) View Current Display")
-    print("8) Fix Burnin")
+    print("8) Set Screen Brightness")
     result = int(raw_input("Enter your choice: "))
     return result
 
@@ -99,18 +99,8 @@ def head():
         img.show()
         head()
     elif result == 8:
-        screen.set_off()
-        for i in range(0, 50):
-            screen.set_flatfield(255, 0)
-            screen.send_screen()
-            time.sleep(2)
-            screen.set_flatfield(255, 1)
-            screen.send_screen()
-            time.sleep(2)
-            screen.set_flatfield(255, 2)
-            screen.send_screen()
-            time.sleep(2)
-        screen.set_off()
+        brightness = int(raw_input("Please enter the new screen brighness(0-255): "))
+        screen.set_phone_brightness(brightness)
         head()
     else:
         print("invalid option please repick...")
