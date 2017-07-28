@@ -20,6 +20,7 @@ from tkFileDialog import askopenfilename
 import math
 import base64
 import os
+from time import sleep
 
 # Global Constants
 PORT        = 6000                  # Predefined port Number, Needs to be the same as android side
@@ -28,6 +29,7 @@ SUCCESS     = '2\n'
 DISCONNECT  = '3\n'
 SETTIME     = '4\n'
 GETSCREENDIM= '5\n'
+SETBRIGHT   = '6\n'
 HOST        = 'localhost'           # Socket descriptors
 ADDR        = (HOST, PORT)
 
@@ -36,9 +38,9 @@ class RemoteScreen:
 
     # Remote Screen State Variables
     __sock  = None
-    screen  = None                  # Underlying numpy array
-    width   = 0
-    height  = 0
+    __screen  = None                  # Underlying numpy array
+    __width   = 0
+    __height  = 0
     csdt    = 0                     # The Current Screen delay time
     csst    = 0                     # The Current Screen Show Time
     mode    = 'Not Set'             # The current State of accessing the screen
@@ -49,13 +51,13 @@ class RemoteScreen:
         # Note that adb needs to be added as an environment variable for this to work
 
         os.system("adb forward tcp:" + str(PORT) + " tcp:" + str(PORT)) # Port forwards the CPU port to phone port
-        self.__sock = self.socket_config()
-        self.get_screen_dim()
-        self.screen = np.zeros((self.width, self.height, 3))                                  # Creates the underlying array for the screen
+        self.__sock = self.__socket_config()
+        self.__get_screen_dim()
+        self.__screen = np.zeros((self.__width, self.__height, 3))                                  # Creates the underlying array for the screen
                                 # initialize the socket used for communicating
 
 
-    def socket_config(self):
+    def __socket_config(self):
         #   This function initializes the socket connection with the android device. It needs to be called after the
         # ADB forward command or it will raise an error. This function needs to be called before send_screen
         # is called, or their will be no connection to send the screen to.
@@ -73,13 +75,21 @@ class RemoteScreen:
         return s                                                        # Returns the Socket for communication
 
     # Gets the dimensions of the phone screen on the android side
-    def get_screen_dim(self):
+    def __get_screen_dim(self):
         self.__sock.send(GETSCREENDIM)
         self.__sock.recv(2)
         wstring, hstring = self.__sock.recv(100).split(',')
-        self.width  = int(wstring)
-        self.height = int(hstring)
+        self.__width  = int(wstring)
+        self.__height = int(hstring)
+        sleep(1)
 
+    def set_phone_brightness(self, bval):
+        print("WARNING! SETTING PHONE TO LARGE BRIGHT VALUE CAN DAMAGE THE SCREEN!")
+        self.__sock.send(SETBRIGHT)
+        self.__sock.recv(10)
+        self.__sock.send(str(bval) + '\n')
+        self.__sock.recv(10)
+        sleep(2)
 
     def send_screen(self):
         #   This function sends the current state of the screen to the android device screen. It is requried that the
@@ -89,22 +99,22 @@ class RemoteScreen:
         print("Sending Screen")                                             # Notifies Phone that new screen is sending
         self.__sock.send(NEWDATA)
         self.__sock.recv(10)
-        self.__sock.send(str(self.width) + ':' + str(self.height) + '\n')   # Sending the screens dimensions
+        self.__sock.send(str(self.__width) + ':' + str(self.__height) + '\n')   # Sending the screens dimensions
         self.__sock.recv(10)
 
         # New Base64 method, more resource efficient
-        rgbArray = np.zeros((self.height, self.width, 3), 'uint8')
-        rgbArray[..., 0] = np.transpose(self.screen[:, :, 0])
-        rgbArray[..., 1] = np.transpose(self.screen[:, :, 1])
-        rgbArray[..., 2] = np.transpose(self.screen[:, :, 2])
+        rgbArray = np.zeros((self.__height, self.__width, 3), 'uint8')
+        rgbArray[..., 0] = np.transpose(self.__screen[:, :, 0])
+        rgbArray[..., 1] = np.transpose(self.__screen[:, :, 1])
+        rgbArray[..., 2] = np.transpose(self.__screen[:, :, 2])
         img = Image.fromarray(rgbArray)
         img.save('img.bmp')                             # Convert Screen to base64
-        img.show()
         with open("img.bmp", "rb") as image_file:
             encoded_string = base64.b64encode(image_file.read())
         self.__sock.send(encoded_string + '\n')                 # Send as String
 
         print("Screen sent successfully")
+        sleep(3)
 
 
     def set_time(self,new_time, new_sleep):
@@ -133,13 +143,13 @@ class RemoteScreen:
         # the second argument is the y coordinate and the third is the intensity which is [0,255].
         # pz = R = 0, G = 1, B = 2
 
-        self.check_param(1, self.width, px,"Pixel Width")
-        self.check_param(1, self.height, py, "Pixel Height")
+        self.check_param(1, self.__width, px,"Pixel Width")
+        self.check_param(1, self.__height, py, "Pixel Height")
         self.check_param(0, 2, pz, "Pixel Depth")
         self.check_param(0, 255, val, "Pixel Value")
 
         self.mode = 'Individual Pixel'
-        self.screen[px, py, pz] = val
+        self.__screen[px, py, pz] = val
 
 
 
@@ -147,7 +157,7 @@ class RemoteScreen:
         #   Turns all of the pixels off effectively resetting the android screen
 
         self.mode = 'Off'
-        self.screen = np.zeros((self.width, self.height, 3))
+        self.__screen = np.zeros((self.__width, self.__height, 3))
 
 
     def set_flatfield(self, val, depth):
@@ -157,9 +167,9 @@ class RemoteScreen:
         self.check_param(0, 255, val, "Flat Value")
         self.check_param(0, 2, depth, "Flat Depth")
         self.mode = 'Flat Field'
-        for x in range(0, self.width):
-            for y in range(0, self.height):
-                self.screen[x, y, depth] = val
+        for x in range(0, self.__width):
+            for y in range(0, self.__height):
+                self.__screen[x, y, depth] = val
 
 
     def set_gray(self, val):
@@ -167,7 +177,7 @@ class RemoteScreen:
         self.check_param(0, 255, val, "Grey Value")
         # Turns the screen to a grey shade
         self.mode = 'grey'
-        self.screen[:, :, :] = val
+        self.__screen[:, :, :] = val
 
 
     def set_image(self):
@@ -180,19 +190,18 @@ class RemoteScreen:
         filename = askopenfilename()
         img = Image.open(filename)
         width, height = img.size
-        if width == self.width and height == self.height:           # Check image dimensions
+
+        if width == self.__height and height == self.__width:           # Check image dimensions
             px = img.load()
-            self.check_param(self.width, self.width, width, "Image Width")
-            self.check_param(self.height, self.height, height, "Image Height")
-            for i in range(img.size[0]):  # for every pixel:        # Convert the screen to the image
-                for j in range(img.size[1]):
+            for i in range(img.size[0]-1):  # for every pixel:        # Convert the screen to the image
+                for j in range(img.size[1]-1):
                     for k in range(2):
                         temp = px[i, j]
-                        self.screen[i,j,0] = temp[0]
-                        self.screen[i, j, 1] = temp[1]
-                        self.screen[i, j, 2] = temp[2]
+                        self.__screen[j,i,0] = temp[0]
+                        self.__screen[j, i, 1] = temp[1]
+                        self.__screen[j, i, 2] = temp[2]
         else:
-            print("Error, the image has incorrect size, it needs the dims: " + str(self.width) + ", " + str(self.height))
+            print("Error, the image has incorrect size, it needs the dims: " + str(self.__width) + ", " + str(self.__height))
 
 
     def set_sparsefeild(self, depth, xspace, yspace, bval, dval):
@@ -208,12 +217,12 @@ class RemoteScreen:
         self.check_param(0, 255, dval, "Sparse Dark Value")
 
         self.mode = "Even Distribution "
-        for x in range(0,self.width):
-            for y in range(0, self.height):
+        for x in range(0,self.__width):
+            for y in range(0, self.__height):
                 if(x % xspace == 0) and (y % yspace == 0):          # Set specified pixels to specified values
-                    self.screen[x, y, depth] = bval
+                    self.__screen[x, y, depth] = bval
                 else:
-                    self.screen[x, y, depth] = dval
+                    self.__screen[x, y, depth] = dval
 
 
     def set_circle(self, depth, radius, bval, dval, xpos, ypos):
@@ -229,12 +238,12 @@ class RemoteScreen:
         self.check_param(1, 2000, radius, "X Position")
 
         self.mode = "Circle"
-        for x in range(0, self.width):
-            for y in range(0, self.height):
+        for x in range(0, self.__width):
+            for y in range(0, self.__height):
                 if math.sqrt(((x - xpos) ** 2) + ((y - ypos) ** 2)) < radius:
-                    self.screen[x, y, depth] = bval
+                    self.__screen[x, y, depth] = bval
                 else:
-                    self.screen[x, y, depth] = dval
+                    self.__screen[x, y, depth] = dval
 
 
     def print_state(self):
@@ -249,8 +258,8 @@ class RemoteScreen:
         print("Mode: " + self.mode)
         print("Current Screen Delay Time(ms): " + str(self.csdt))
         print("Current Screen Show Time(ms): " + str(self.csst))
-        print("Current Width: " + str(self.width))
-        print("Current Height: " + str(self.height))
+        print("Current Width: " + str(self.__width))
+        print("Current Height: " + str(self.__height))
         print("Current Port#: " + str(PORT))
 
 
