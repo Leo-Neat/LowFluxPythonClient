@@ -1,0 +1,14 @@
+2017-08-23T14:44:36.630000:Config: Test Name: Timing percentage test
+2017-08-23T14:44:36.630000:Config: Test Description: Testing for linearity between percentage and intensity
+2017-08-23T14:44:36.631000:Config: _____CAMERA SETTINGS____
+2017-08-23T14:44:36.632000:Config: Exposure Time(ms): 10
+2017-08-23T14:44:36.632000:Config: Gain: 1
+2017-08-23T14:44:36.633000:Config: Readout: 2.2
+2017-08-23T14:44:36.633000:Config: Amp used: Conventional
+2017-08-23T14:44:36.634000:Config: _____SCREEN SETTINGS_____
+2017-08-23T14:44:36.635000:Config: Mode: Off
+2017-08-23T14:44:36.635000:Config: Current Screen Delay Time(ms): 1
+2017-08-23T14:44:36.636000:Config: Current Screen Show Time(ms): 0
+2017-08-23T14:44:36.636000:Config: Current Screen Width: 1440
+2017-08-23T14:44:36.637000:Config: Current Screen Height: 2768
+2017-08-23T14:44:36.638000:Config: Current Screen Brightness: 50

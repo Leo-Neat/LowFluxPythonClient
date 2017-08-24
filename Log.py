@@ -12,11 +12,13 @@ import datetime
 
 class Log:
 
-    temp_store_name = 'temp.txt'
+    temp_store_name = ''
 
     # This creates the log file and detrmines begins storing the information
-    def __init__(self):
+    def __init__(self, name):
+        self.temp_store_name = name + '.txt'
         self.clear_file()
+
 
 
     def clear_file(self):
@@ -36,12 +38,15 @@ class Log:
             f.write(i.isoformat() + ":" + tag + ': ' + text.upper() + '\n')
             f.close
 
-    def save_log(self, location):
+    def save_log(self, location, config):
         with open(self.temp_store_name, "r") as f:
             temp_str = f.read()
             f.close
         i = datetime.datetime.now()
-        fname = location +'\\' + i.isoformat().replace(':','_') +'.txt'
+        if config == True:
+            fname = location +'\\' + i.isoformat().replace(':','_') +'CONFIG.txt'
+        else:
+            fname = location + '\\' + i.isoformat().replace(':', '_') + '.txt'
         print(fname)
         with open(fname,'w') as f:
             f.write(temp_str)

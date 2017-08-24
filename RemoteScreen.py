@@ -42,6 +42,7 @@ class RemoteScreen:
     __screen  = None                  # Underlying numpy array
     __width   = 0
     __height  = 0
+    __brightness = 0
     csdt    = 0                     # The Current Screen delay time
     csst    = 0                     # The Current Screen Show Time
     mode    = 'Not Set'             # The current State of accessing the screen
@@ -52,12 +53,14 @@ class RemoteScreen:
         # Initializes the Remote screen class for controlling an android device connected via USB port
         # Note that adb needs to be added as an environment variable for this to work
 
-        self.log = Log.Log()
+        self.log = Log.Log('temp_log')
         self.log.append_line("ADB","adb forward tcp:" + str(PORT) + " tcp:" + str(PORT))
         os.system("adb forward tcp:" + str(PORT) + " tcp:" + str(PORT)) # Port forwards the CPU port to phone port
         sleep(1)
         os.system('adb devices')
         os.system("adb shell am start -n com.jpl.lneat.lowfluxserver/com.jpl.lneat.lowfluxserver.MainActivity")
+        os.system("adb shell settings put global policy_control immersive.full=com.jpl.lneat.lowfluxserver")
+        self.log.append_line("ADB", "adb shell settings put global policy_control immersive.full=com.jpl.lneat.lowfluxserver")
         self.log.append_line("ADB", "adb shell am start -n com.jpl.lneat.lowfluxserver/com.jpl.lneat.lowfluxserver.MainActivity")
         sleep(2)
         try:
@@ -80,26 +83,26 @@ class RemoteScreen:
         # ADB forward command or it will raise an error. This function needs to be called before send_screen
         # is called, or their will be no connection to send the screen to.
 
-
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.connect(ADDR)
         except Exception, e:
             print "Error unable to establish connection: "+ str(e)
             exit(1)
-        self.log.append_line("COMS","Attemping to establish connection with device..." )
+        self.log.append_line("COMS","Attempting to establish connection with device..." )
         self.log.append_line("COMS", "Port: " + str(PORT))
         self.log.append_line("COMS", "Host: " + HOST)
         self.log.append_line("COMS", "Connection established")
-        print("Attemping to establish connection with device...")
+        print("Attempting to establish connection with device...")
         print("Port: " + str(PORT))
         print("Host: " + HOST)
         print("Connection established")
         return s                                                        # Returns the Socket for communication
 
 
-    # Gets the dimensions of the phone screen on the android side
     def __get_screen_dim(self):
+        # Gets the dimensions of the phone screen on the android side
+
         self.__sock.send(GETSCREENDIM)
         self.__sock.recv(2)
         wstring, hstring = self.__sock.recv(100).split(',')
@@ -110,6 +113,9 @@ class RemoteScreen:
 
 
     def set_phone_brightness(self, bval):
+        # This function is used to set the android screens brightness to a value between 0 and 255.
+        # This is a dangerous function because setting the brightness to high can damage the screen.
+
         self.log.append_line("DISPLAY", "Setting Screen to new brightness")
         print("WARNING! SETTING PHONE TO LARGE BRIGHT VALUE CAN DAMAGE THE SCREEN!")
         self.check_param(0, 255, bval, "Phone Brighness")
@@ -117,13 +123,16 @@ class RemoteScreen:
         self.__sock.recv(10)
         self.__sock.send(str(bval) + '\n')
         self.__sock.recv(10)
+        self.__brightness = bval
         self.log.append_line("DISPLAY", "Phones brighness set to: " + str(bval))
         sleep(2)
+
 
     def send_screen(self):
         #   This function sends the current state of the screen to the android device screen. It is requried that the
         # __socket_config function is called before this or this function will not work. This should be called as
         # an updater method to sync the screen with the program.
+
         self.log.append_line("DISPLAY","Sending screen")
         print("Sending Screen")                                             # Notifies Phone that new screen is sending
         self.__sock.send(NEWDATA)
@@ -172,7 +181,7 @@ class RemoteScreen:
         # the second argument is the y coordinate and the third is the intensity which is [0,255].
         # pz = R = 0, G = 1, B = 2
 
-        self.log.append_line("Setting pixel: (" + str(px) + ", " + str(py) + ', ' + str(pz) + ') to the value: ' + str(val))
+        self.log.append_line("DISPLAY","Setting pixel: (" + str(px) + ", " + str(py) + ', ' + str(pz) + ') to the value: ' + str(val))
         self.check_param(1, self.__width, px,"Pixel Width")
         self.check_param(1, self.__height, py, "Pixel Height")
         self.check_param(0, 2, pz, "Pixel Depth")
@@ -222,7 +231,6 @@ class RemoteScreen:
         self.log.append_line("DISPLAY", "Setting the display to an image located at: " + filename)
         img = Image.open(filename)
         width, height = img.size
-
         if width == self.__height and height == self.__width:           # Check image dimensions
             px = img.load()
             for i in range(img.size[0]-1):  # for every pixel:        # Convert the screen to the image
@@ -249,7 +257,6 @@ class RemoteScreen:
         self.check_param(1, 2000, yspace, "Sparse Y Space")
         self.check_param(0, 255, bval, "Sparse Bright Value")
         self.check_param(0, 255, dval, "Sparse Dark Value")
-
         self.mode = "Even Distribution "
         for x in range(0,self.__width):
             for y in range(0, self.__height):
@@ -296,10 +303,13 @@ class RemoteScreen:
         print("Current Height: " + str(self.__height))
         print("Current Port#: " + str(PORT))
 
-    # This will save the log of the most recent events with this emulator
-    # The log_save_loc is a string with the directory where you want to save the log
+
     def save_log(self, log_save_loc):
-        self.log.save_log(log_save_loc)
+        # This will save the log of the most recent events with this emulator
+        # The log_save_loc is a string with the directory where you want to save the log
+
+        self.log.save_log(log_save_loc,False)
+
 
     def check_param(self, min, max, param, fun):
         # checks to see if the parameter is within viable values. This is to help prevent the android
@@ -313,4 +323,22 @@ class RemoteScreen:
             self.log.append_bold_line("ERROR","Error, you have passed an out of bounds [" +str(min) + ", " + str(max)+ "]  "
                 "parameter in value " + fun + ". System will now exit.")
             exit(1)
+
+    def gen_config(self, test_name, test_description, exposure_time, gain_used, amp, readout_rate, save_loc):
+        config = Log.Log('config')
+        config.append_line("Config", "Test Name: " + test_name)
+        config.append_line("Config","Test Description: " + test_description)
+        config.append_bold_line("Config","_____Camera Settings____")
+        config.append_line("Config","Exposure Time(ms): " + str(exposure_time))
+        config.append_line("Config","Gain: " + str(gain_used))
+        config.append_line("Config","Readout: " + str(readout_rate))
+        config.append_line("Config","Amp used: " + str(amp))
+        config.append_bold_line("Config","_____Screen Settings_____")
+        config.append_line("Config","Mode: " + self.mode)
+        config.append_line("Config","Current Screen Delay Time(ms): " + str(self.csdt))
+        config.append_line("Config","Current Screen Show Time(ms): " + str(self.csst))
+        config.append_line("Config","Current Screen Width: " + str(self.__width))
+        config.append_line("Config","Current Screen Height: " + str(self.__height))
+        config.append_line("Config","Current Screen Brightness: " + str(self.__brightness))
+        config.save_log(save_loc,True)
 

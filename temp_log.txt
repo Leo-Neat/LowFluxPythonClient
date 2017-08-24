@@ -1,0 +1,27 @@
+2017-08-24T10:36:17.317000:ADB: adb forward tcp:6000 tcp:6000
+2017-08-24T10:36:19.904000:ADB: adb shell settings put global policy_control immersive.full=com.jpl.lneat.lowfluxserver
+2017-08-24T10:36:19.906000:ADB: adb shell am start -n com.jpl.lneat.lowfluxserver/com.jpl.lneat.lowfluxserver.MainActivity
+2017-08-24T10:36:23.345000:COMS: Starting Socket Setup
+2017-08-24T10:36:23.348000:COMS: Attempting to establish connection with device...
+2017-08-24T10:36:23.350000:COMS: Port: 6000
+2017-08-24T10:36:23.352000:COMS: Host: localhost
+2017-08-24T10:36:23.353000:COMS: Connection established
+2017-08-24T10:36:23.355000:COMS: Receiving the android screen size
+2017-08-24T10:36:23.368000:COMS: Screen dims received: 1440 : 2768
+2017-08-24T10:36:24.370000:DISPLAY: Setting Screen to new brightness
+2017-08-24T10:36:24.378000:DISPLAY: Phones brighness set to: 50
+2017-08-24T10:39:48.022000:DISPLAY: Setting pixel: (700, 1342, 1) to the value: 200
+2017-08-24T10:39:51.698000:DISPLAY: Sending screen
+2017-08-24T10:39:52.081000:DISPLAY: Screen sent successfully
+2017-08-24T10:40:09.301000:TIME:  Changing display time, new show length: 1000 New Sleep time: 0
+2017-08-24T10:41:38.874000:TIME:  Changing display time, new show length: 1000 New Sleep time: 111
+2017-08-24T10:42:12.992000:TIME:  Changing display time, new show length: 1000 New Sleep time: 250
+2017-08-24T10:42:39.555000:TIME:  Changing display time, new show length: 1000 New Sleep time: 429
+2017-08-24T10:43:02.680000:TIME:  Changing display time, new show length: 1000 New Sleep time: 666
+2017-08-24T10:43:43.612000:TIME:  Changing display time, new show length: 1000 New Sleep time: 2000
+2017-08-24T10:43:55.757000:TIME:  Changing display time, new show length: 1000 New Sleep time: 666
+2017-08-24T10:44:23.202000:TIME:  Changing display time, new show length: 1000 New Sleep time: 1000
+2017-08-24T10:44:50.885000:TIME:  Changing display time, new show length: 1000 New Sleep time: 1500
+2017-08-24T10:45:16.853000:TIME:  Changing display time, new show length: 1000 New Sleep time: 2333
+2017-08-24T10:45:39.323000:TIME:  Changing display time, new show length: 1000 New Sleep time: 4000
+2017-08-24T10:46:18.571000:TIME:  Changing display time, new show length: 1000 New Sleep time: 9000
