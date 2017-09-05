@@ -17,10 +17,12 @@ import socket
 from PIL import Image
 from Tkinter import Tk
 from tkFileDialog import askopenfilename
+from scipy import ndimage
 import math
 import base64
 import os
 import Log
+import pyfits
 from time import sleep
 
 # Global Constants
@@ -38,6 +40,10 @@ ADDR        = (HOST, PORT)
 class RemoteScreen:
 
     # Remote Screen State Variables
+    XCENTER = 695
+    YCENTER = 1383
+    __pixel_width   = 610
+    __pixel_height  = 610
     __sock  = None
     __screen  = None                  # Underlying numpy array
     __width   = 0
@@ -76,6 +82,10 @@ class RemoteScreen:
         self.__screen = np.zeros((self.__width, self.__height, 3))    # Creates the underlying array for the screen
         self.set_phone_brightness(50)
                                 # initialize the socket used for communicating
+
+    def set_new_center(self, xcenter, ycenter):
+        self.XCENTER = xcenter
+        self.YCENTER = ycenter
 
 
     def __socket_config(self):
@@ -139,12 +149,13 @@ class RemoteScreen:
         self.__sock.recv(10)
         self.__sock.send(str(self.__width) + ':' + str(self.__height) + '\n')   # Sending the screens dimensions
         self.__sock.recv(10)
+        to_send = self.__clear_outer_screen()
 
         # New Base64 method, more resource efficient
         rgbArray = np.zeros((self.__height, self.__width, 3), 'uint8')
-        rgbArray[..., 0] = np.transpose(self.__screen[:, :, 0])
-        rgbArray[..., 1] = np.transpose(self.__screen[:, :, 1])
-        rgbArray[..., 2] = np.transpose(self.__screen[:, :, 2])
+        rgbArray[..., 0] = np.transpose(to_send[:, :, 0])
+        rgbArray[..., 1] = np.transpose(to_send[:, :, 1])
+        rgbArray[..., 2] = np.transpose(to_send[:, :, 2])
         img = Image.fromarray(rgbArray)
         img.save('img.bmp')                             # Convert Screen to base64
         with open("img.bmp", "rb") as image_file:
@@ -152,7 +163,23 @@ class RemoteScreen:
         self.__sock.send(encoded_string + '\n')                 # Send as String
         self.log.append_line("DISPLAY", "Screen sent successfully")
         print("Screen sent successfully")
-        sleep(3)
+        sleep(2)
+
+
+    def __clear_outer_screen(self):
+        temp_screen = np.copy(self.__screen)
+        x,y,z = self.__screen.shape
+        xlow = self.XCENTER - (self.__pixel_width/2)
+        xhigh = self.XCENTER +(self.__pixel_width/2)
+        ylow = self.YCENTER - (self.__pixel_height/2)
+        yhigh = self.YCENTER + (self.__pixel_height/2)
+        for i in range(0,x):
+            for j in range(0, y):
+                for k in range(0,z):
+                    if not (i < xhigh and i > xlow and j < yhigh and j > ylow):
+                        temp_screen[i,j,k] = 0
+        return temp_screen
+
 
     def set_time(self,new_time, new_sleep):
         #   Sets the time at which the image is shown on the android device. The first argument is the
@@ -243,6 +270,49 @@ class RemoteScreen:
         else:
             self.log.append_bold_line("ERROR", "Image is incorrect size it needs the dims: " + str(self.__width) + ", " + str(self.__height))
             print("Error, the image has incorrect size, it needs the dims: " + str(self.__width) + ", " + str(self.__height))
+
+
+    def green_conv_exp(self, num):
+        ret = (math.log(num + 21848.0331,9947.15004))/.0111304340
+        if( ret <98):
+            ret = 0
+        return ret
+
+    def green_conv_poly(self, num):
+            print(num)
+            a =  2.86916283
+            b = -203.75003844
+            c = -554.79445102
+            re = (-b - math.sqrt((b**2) - 4*a*(c-num)))/2*a
+            print(re)
+            return re
+
+
+    def set_fits(self, fits_loc):
+        if fits_loc.endswith('.fits'):
+             print(file)
+             hud_list = pyfits.open(fits_loc)
+             fits_img = hud_list[0].data
+        x,y = fits_img.shape
+        img_xstart = self.XCENTER - (x/2)
+        img_ystart = self.YCENTER - (y/2)
+        for i in range(0,x):
+            for j in range(0,y):
+                self.__screen[i + img_xstart,j + img_ystart,1] = self.green_conv_exp(fits_img[i,j]*(10**11))
+
+
+    def shift_screen(self,shift_x,shift_y):
+        new_screen = np.zeros(self.__screen.shape)
+        x,y,z = self.__screen.shape
+        for i in range(0, x):
+            for j in range(0, y):
+                if(i+shift_x>=x or j + shift_y >= y):
+                    continue
+                if(i+shift_x <=0 or j + shift_y <= 0):
+                    continue
+                new_screen[i + shift_x, j + shift_y] = self.__screen[i, j]
+        self.__screen = np.copy(new_screen)
+)
 
 
     def set_sparsefeild(self, depth, xspace, yspace, bval, dval):
