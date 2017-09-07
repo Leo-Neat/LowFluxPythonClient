@@ -83,6 +83,11 @@ class RemoteScreen:
         self.set_phone_brightness(50)
                                 # initialize the socket used for communicating
 
+
+    def get_pixel_dims(self):
+        return [self.__pixel_width, self.__pixel_height]
+
+
     def set_new_center(self, xcenter, ycenter):
         self.XCENTER = xcenter
         self.YCENTER = ycenter
@@ -300,6 +305,16 @@ class RemoteScreen:
             for j in range(0,y):
                 self.__screen[i + img_xstart,j + img_ystart,1] = self.green_conv_exp(fits_img[i,j]*(10**11))
 
+    def set_mat(self, mat):
+        x, y, z = mat.shape
+        img_xstart = self.XCENTER - (x / 2)
+        img_ystart = self.YCENTER - (y / 2)
+        for i in range(0,x):
+            for j in range(0,y):
+                for k in range(0,3):
+                    self.__screen[i + img_xstart,j + img_ystart,k] = mat[i,j,k]
+
+
 
     def shift_screen(self,shift_x,shift_y):
         new_screen = np.zeros(self.__screen.shape)
@@ -312,7 +327,6 @@ class RemoteScreen:
                     continue
                 new_screen[i + shift_x, j + shift_y] = self.__screen[i, j]
         self.__screen = np.copy(new_screen)
-)
 
 
     def set_sparsefeild(self, depth, xspace, yspace, bval, dval):

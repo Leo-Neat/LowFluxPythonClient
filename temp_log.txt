@@ -1,18 +1,14 @@
-2017-09-05T10:16:20.765000:ADB: adb forward tcp:6000 tcp:6000
-2017-09-05T10:16:23.524000:ADB: adb shell settings put global policy_control immersive.full=com.jpl.lneat.lowfluxserver
-2017-09-05T10:16:23.526000:ADB: adb shell am start -n com.jpl.lneat.lowfluxserver/com.jpl.lneat.lowfluxserver.MainActivity
-2017-09-05T10:16:27.190000:COMS: Starting Socket Setup
-2017-09-05T10:16:27.194000:COMS: Attempting to establish connection with device...
-2017-09-05T10:16:27.195000:COMS: Port: 6000
-2017-09-05T10:16:27.197000:COMS: Host: localhost
-2017-09-05T10:16:27.198000:COMS: Connection established
-2017-09-05T10:16:27.200000:COMS: Receiving the android screen size
-2017-09-05T10:16:27.207000:COMS: Screen dims received: 1440 : 2768
-2017-09-05T10:16:28.209000:DISPLAY: Setting Screen to new brightness
-2017-09-05T10:16:28.234000:DISPLAY: Phones brighness set to: 50
-2017-09-05T10:16:36.020000:DISPLAY: Sending screen
-2017-09-05T10:16:40.845000:DISPLAY: Screen sent successfully
-2017-09-05T10:21:50.066000:DISPLAY: Setting display to zero
-2017-09-05T10:21:52.402000:DISPLAY: Sending screen
-2017-09-05T10:21:57.118000:DISPLAY: Screen sent successfully
-2017-09-05T10:22:46.949000:COMS: SUCCESSFULLY DISCONNECTED
+2017-09-07T13:26:24.699000:ADB: adb forward tcp:6000 tcp:6000
+2017-09-07T13:26:31.426000:ADB: adb shell settings put global policy_control immersive.full=com.jpl.lneat.lowfluxserver
+2017-09-07T13:26:31.428000:ADB: adb shell am start -n com.jpl.lneat.lowfluxserver/com.jpl.lneat.lowfluxserver.MainActivity
+2017-09-07T13:26:34.774000:COMS: Starting Socket Setup
+2017-09-07T13:26:34.780000:COMS: Attempting to establish connection with device...
+2017-09-07T13:26:34.780000:COMS: Port: 6000
+2017-09-07T13:26:34.781000:COMS: Host: localhost
+2017-09-07T13:26:34.782000:COMS: Connection established
+2017-09-07T13:26:34.782000:COMS: Receiving the android screen size
+2017-09-07T13:26:34.788000:COMS: Screen dims received: 1440 : 2768
+2017-09-07T13:26:35.789000:DISPLAY: Setting Screen to new brightness
+2017-09-07T13:26:35.801000:DISPLAY: Phones brighness set to: 50
+2017-09-07T13:27:03.916000:DISPLAY: Sending screen
+2017-09-07T13:27:08.928000:DISPLAY: Screen sent successfully
