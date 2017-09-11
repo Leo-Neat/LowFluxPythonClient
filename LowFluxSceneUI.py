@@ -35,10 +35,12 @@ class LowFluxSceneUI:
 
         self.__remote_screen                        = rs
         self.__screen_width, self.__screen_height   = self.__remote_screen.get_pixel_dims()
+        self.__screen_width = self.__screen_width + 20
+        self.__screen_height = self.__screen_height + 20
         self.__screen_xcenter                       = self.__remote_screen.XCENTER
         self.__screen_ycenter                       = self.__remote_screen.YCENTER
         self.__base_screen                          = np.zeros([self.__screen_width,self.__screen_height,3])
-        self.__master                               = Tk()
+        self.__master                               = Toplevel()
         self.UI_setup()
         self.__master.mainloop()
 
@@ -64,6 +66,7 @@ class LowFluxSceneUI:
         label3.grid(row=4,column=0)
         self.__intensity.grid(row=4,column=1)
         img = ImageTk.PhotoImage(Image.fromarray(self.__base_screen.astype('uint8')))
+        print(img)
         self.__panel = Label(self.__master, image=img)
         self.__panel.image = img
         self.__panel.grid(columnspan=3,row=1)

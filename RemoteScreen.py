@@ -40,10 +40,10 @@ ADDR        = (HOST, PORT)
 class RemoteScreen:
 
     # Remote Screen State Variables
-    XCENTER = 695
+    XCENTER = 725
     YCENTER = 1383
-    __pixel_width   = 610
-    __pixel_height  = 610
+    __pixel_width   = 595
+    __pixel_height  = 595
     __sock  = None
     __screen  = None                  # Underlying numpy array
     __width   = 0
@@ -312,7 +312,7 @@ class RemoteScreen:
         for i in range(0,x):
             for j in range(0,y):
                 for k in range(0,3):
-                    self.__screen[i + img_xstart,j + img_ystart,k] = mat[i,j,k]
+                    self.__screen[i + img_xstart, y + img_ystart-j,k] = mat[i,j,k]
 
 
 

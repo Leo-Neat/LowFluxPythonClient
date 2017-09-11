@@ -1,0 +1,52 @@
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage{indentfirst}
+\usepackage{graphicx}
+\usepackage{enumitem}  
+\usepackage{subfig}
+\usepackage{soul}
+
+\title{%
+	USB Android Screen Manager Documentation and Instructions \\
+	\large Jet Propulsion Laboratory \\ 
+	WFIRST Coronagraph Development}
+\author{Leo Neat \\ \href{mailto:lneat@ucsc.edu}{lneat@ucsc.edu} }
+\date{July 13, 2017}
+\begin{document}
+\maketitle
+
+
+\section*{Description}
+This application is able to control an android's screen remotly over a usb connection to a configured desktop with no android UI.  
+\par USB Android Screen Manager was created to implement the new testbed concept of an android phone replacing a laser as a light source for testing a EMCCD camera in photon counting mode. It is required that pixels go completely dark when their values were set to zero, meaning that \ul{only phones with the new Organic Light Emitting Diodes(OLED) pixels should be utilized for this application.} We reccomend using the samsung galaxy s7 or s8 because of their high pixel density.  \par \medskip
+Theses are the base requirments that this application is able to fullfil.
+\begin{enumerate}
+	\item Control the android device without a user interface(UI) 
+	\item To have no stray lights or internal LED’s that would disturb the EMCCD. 
+	\item Accept an RGB array as input for phone pixel values
+	\item Accept a flat field as input for phones pixel values
+	\item Accept the length of visible time as an input
+	\item Accept periodic spot matrices as input for phones pixel values
+	\item Allow the user to control the intensity of individual pixels
+\end{enumerate}
+
+
+\section{Enviroment Configuration}
+
+\subsection{Android Studio Download}
+	Android Studio is required in order to communicate with the phone remotely over USB. Android Studio is a Free application produced by Google that is an IDE specific to Android Devlopement. When I have time, I will try to programaticly 
+inteface with android studio so that using it is not nessesary, but untill then it is required. \medskip
+
+\begin{enumerate}
+	\item Go to the following link and press the DOWNLOAD button: \url{https://developer.android.com/studio/index.html}
+	\item To have no stray lights or internal LED’s that would disturb the EMCCD. 
+	\item Accept an RGB array as input for phone pixel values
+	\item Accept a flat field as input for phones pixel values
+	\item Accept the length of visible time as an input
+	\item Accept periodic spot matrices as input for phones pixel values
+	\item Allow the user to control the intensity of individual pixels
+\end{enumerate}
+
+
+
+\end{document}
