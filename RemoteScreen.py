@@ -17,6 +17,7 @@ import socket
 from PIL import Image
 from Tkinter import Tk
 from tkFileDialog import askopenfilename
+from matplotlib import pyplot as plt
 from scipy import ndimage
 import math
 import base64
@@ -24,6 +25,7 @@ import os
 import Log
 import pyfits
 from time import sleep
+import cv2
 
 # Global Constants
 PORT        = 6000                  # Predefined port Number, Needs to be the same as android side
@@ -40,8 +42,9 @@ ADDR        = (HOST, PORT)
 class RemoteScreen:
 
     # Remote Screen State Variables
-    XCENTER = 725
-    YCENTER = 1383
+    XCENTER = 450
+    YCENTER = 700
+    ROT_DEG = 45
     __pixel_width   = 595
     __pixel_height  = 595
     __sock  = None
@@ -154,7 +157,8 @@ class RemoteScreen:
         self.__sock.recv(10)
         self.__sock.send(str(self.__width) + ':' + str(self.__height) + '\n')   # Sending the screens dimensions
         self.__sock.recv(10)
-        to_send = self.__clear_outer_screen()
+        to_send = self.__clear_outer_screen(self.__screen.copy())
+        to_send = self.__screen_rot(self.ROT_DEG,to_send)
 
         # New Base64 method, more resource efficient
         rgbArray = np.zeros((self.__height, self.__width, 3), 'uint8')
@@ -171,8 +175,11 @@ class RemoteScreen:
         sleep(2)
 
 
-    def __clear_outer_screen(self):
-        temp_screen = np.copy(self.__screen)
+    def set_rot_deg(self, deg):
+        self.ROT_DEG = deg
+
+    def __clear_outer_screen(self, sc):
+        temp_screen = sc
         x,y,z = self.__screen.shape
         xlow = self.XCENTER - (self.__pixel_width/2)
         xhigh = self.XCENTER +(self.__pixel_width/2)
@@ -206,6 +213,21 @@ class RemoteScreen:
         self.mode = 'Disconnected'
         self.__sock.send(DISCONNECT)                                        # Notify android of disconnect
         print("Successfully disconnected")
+
+
+    def __screen_rot(self, degrees, mat):
+
+        samp_witdth = int(self.__pixel_width *math.sqrt(2))
+        samp_height = int(self.__pixel_height*math.sqrt(2))
+        sc = mat[self.XCENTER-samp_witdth/2:self.XCENTER + samp_witdth/2, self.YCENTER-samp_height/2: self.YCENTER+samp_height/2]
+        M = cv2.getRotationMatrix2D((samp_witdth/2, samp_height/2), degrees, 1)
+        dst = cv2.warpAffine(sc, M, (samp_witdth,samp_height))
+        cut = np.zeros(self.__screen.shape)
+        for i in range(0, samp_witdth):
+            for j in range(0,samp_height):
+                for k in range(0,3):
+                    cut[i+self.XCENTER - samp_witdth/2,j + self.YCENTER - samp_height/2,k] = dst[i,j,k]
+        return cut
 
 
     def set_pixel(self, px, py, pz, val):
@@ -329,7 +351,7 @@ class RemoteScreen:
         self.__screen = np.copy(new_screen)
 
 
-    def set_sparsefeild(self, depth, xspace, yspace, bval, dval):
+    def set_sparsefield(self, depth, xspace, yspace, bval, dval):
         #  This function allows the user to put a grid of pixels on to the android screen. The grid is defined by four
         # Parameters. The x and y space are integers that depict the distance in pixels between where you want the
         # bright spots. The bval is the intensity level of the bright spots [0,255] and the dval is the intensity of

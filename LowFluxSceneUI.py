@@ -119,15 +119,22 @@ class LowFluxSceneUI:
         :return:
         """
 
-        if self.__green:
-            self.__base_screen[px_loc,py_loc,1] = val
-        if self.__blue:
-            self.__base_screen[px_loc, py_loc, 2] = val
-        if self.__red:
-            self.__base_screen[px_loc, py_loc, 0] = val
+        if val > 255 or val < 0:
+            print("Error your pixel intensity value is not in range!")
+        else:
 
-        if not(self.__red or self.__green or self.__blue):
-            print("Error no color option was selected")
+            if self.__green:
+                self.__base_screen[px_loc,py_loc,1] = val
+            if self.__blue:
+                self.__base_screen[px_loc, py_loc, 2] = val
+            if self.__red:
+                self.__base_screen[px_loc, py_loc, 0] = val
+
+            if not(self.__red or self.__green or self.__blue):
+                for i in range(px_loc-3,px_loc + 3):
+                    for j in range(py_loc-3, py_loc + 3):
+                        for k in range(0,3):
+                            self.__base_screen[i,j,k] = 0
 
 
     def set_green(self):
