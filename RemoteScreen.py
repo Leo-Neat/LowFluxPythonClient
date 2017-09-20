@@ -28,6 +28,7 @@ from time import sleep
 import cv2
 
 # Global Constants
+# DONT TOUCH
 PORT        = 6000                  # Predefined port Number, Needs to be the same as android side
 NEWDATA     = '1\n'                 # Constants used for communicating with android device
 SUCCESS     = '2\n'
@@ -42,11 +43,15 @@ ADDR        = (HOST, PORT)
 class RemoteScreen:
 
     # Remote Screen State Variables
+
+    # Modifyable
     XCENTER = 450
     YCENTER = 700
     ROT_DEG = 45
     __pixel_width   = 595
     __pixel_height  = 595
+
+    # DONT TOUCH
     __sock  = None
     __screen  = None                  # Underlying numpy array
     __width   = 0
@@ -266,7 +271,7 @@ class RemoteScreen:
                 self.__screen[x, y, depth] = val
 
 
-    def set_gray(self, val):
+    def set_grey(self, val):
 
         self.check_param(0, 255, val, "Grey Value")
         # Turns the screen to a grey shade

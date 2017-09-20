@@ -11,6 +11,8 @@ import numpy as np
 from tkinter import *
 from PIL import ImageTk, Image
 from matplotlib import pyplot as plt
+import pyfits
+from tkinter import filedialog as fd
 
 class LowFluxSceneUI:
 
@@ -55,6 +57,12 @@ class LowFluxSceneUI:
         clear_button.grid(row=2,column=1)
         close_button = Button(self.__master, text="Close", command=self.__master.quit)
         close_button.grid(row=2,column=2)
+        save_button =  Button(self.__master, text="Save", command=self.save)
+        save_button.grid(row=5,column=2)
+        label4 = Label(self.__master, text="Save filepath:")
+        label4.grid(row=5,column=0)
+        self.fp = Entry(self.__master, bd=5,width=40)
+        self.fp.grid(row=5, column=1)
         green_box   = Checkbutton(self.__master, text="Green", command=self.set_green)
         red_box     = Checkbutton(self.__master, text="Red", command=self.set_red)
         blue_box    = Checkbutton(self.__master, text="Blue", command=self.set_blue)
@@ -109,6 +117,15 @@ class LowFluxSceneUI:
 
         self.__base_screen = np.zeros([self.__screen_width,self.__screen_height,3])
         self.update_screen()
+
+    def save(self):
+        save_loc = self.fp.get()
+        save_screen = self.__base_screen.swapaxes(0,2)
+        save_screen = save_screen.swapaxes(1,2)
+        try:
+            pyfits.writeto(save_loc, np.flip(save_screen,1))
+        except:
+            print("Invalid file name....")
 
     def set_base_screen_pixel(self, px_loc, py_loc, val):
         """
